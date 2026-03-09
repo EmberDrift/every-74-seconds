@@ -165,6 +165,10 @@
   .hero-count-display {
     text-align: center;
     margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
   }
   .hero-number {
     font-family: 'DM Serif Display', serif;
@@ -541,7 +545,7 @@
       <div class="sr-only" id="hero-count-sr" aria-live="polite" aria-atomic="true"></div>
       <div class="hero-number-label" aria-hidden="true">estimated incidents of sexual violence<br>to someone age 12+ in the U.S.</div>
       <div class="rate-pill">423,020 per year &nbsp;·&nbsp; 1 every ~74 seconds</div>
-      <div><button class="mute-btn" id="mute-btn" aria-pressed="false" aria-label="Mute bell sound">🔔 Mute bell</button></div>
+      <button class="mute-btn" id="mute-btn" aria-pressed="false" aria-label="Mute bell sound">🔔 Mute bell</button>
     </div>
 
     <p class="stadiums-heading">Each Stadium Represents an Average Sized Professional Football Stadium</p>
