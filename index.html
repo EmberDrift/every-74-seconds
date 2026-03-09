@@ -160,7 +160,7 @@
     text-align: center;
     color: var(--text-light);
     font-size: 1.1rem;
-    margin-bottom: 1.8rem;
+    margin-bottom: 0.5rem;
   }
   .hero-count-display {
     text-align: center;
@@ -182,7 +182,33 @@
     text-align: center;
     line-height: 1.5;
   }
-  .rate-pill {
+  .mute-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: 1px solid var(--teal-mid);
+    color: var(--text-light);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-top: 0.6rem;
+    transition: background 0.15s, color 0.15s;
+  }
+  .mute-btn:hover, .mute-btn:focus-visible {
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+  .mute-btn.muted {
+    color: var(--text-light);
+    border-color: #ccc;
+    opacity: 0.7;
+  }
     display: inline-block;
     background: var(--teal-light);
     color: var(--teal-dark);
@@ -515,6 +541,7 @@
       <div class="sr-only" id="hero-count-sr" aria-live="polite" aria-atomic="true"></div>
       <div class="hero-number-label" aria-hidden="true">estimated incidents of sexual violence<br>to someone age 12+ in the U.S.</div>
       <div class="rate-pill">423,020 per year &nbsp;·&nbsp; 1 every ~74 seconds</div>
+      <div><button class="mute-btn" id="mute-btn" aria-pressed="false" aria-label="Mute bell sound">🔔 Mute bell</button></div>
     </div>
 
     <p class="stadiums-heading">Each Stadium Represents an Average Sized Professional Football Stadium</p>
@@ -736,49 +763,47 @@ function drawTally(canvas, count) {
 }
 
 // ─── BELL SOUND ──────────────────────────────────────────────────────────────
-// Uses Web Audio API to synthesize a soft chime — no file needed.
-// Browsers require user interaction before audio can play.
 let audioCtx = null;
+let bellMuted = false;
+
+const muteBtn = document.getElementById('mute-btn');
+muteBtn.addEventListener('click', () => {
+  bellMuted = !bellMuted;
+  muteBtn.setAttribute('aria-pressed', bellMuted);
+  muteBtn.textContent = bellMuted ? '🔕 Unmute bell' : '🔔 Mute bell';
+  muteBtn.setAttribute('aria-label', bellMuted ? 'Unmute bell sound' : 'Mute bell sound');
+  muteBtn.classList.toggle('muted', bellMuted);
+});
 
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 
-// Unlock audio on first user interaction
 document.addEventListener('click', () => getAudioCtx(), { once: true });
 document.addEventListener('touchstart', () => getAudioCtx(), { once: true });
 
 function playChime() {
-  if (prefersReduced.matches) return; // respect reduced motion preference
+  if (bellMuted) return;
+  if (prefersReduced.matches) return;
   try {
-    const ctx  = getAudioCtx();
+    const ctx = getAudioCtx();
     if (ctx.state === 'suspended') ctx.resume();
-
-    const now  = ctx.currentTime;
-
-    // Two sine oscillators slightly detuned for a warm chime blend
+    const now = ctx.currentTime;
     [[880, 0.18], [1108, 0.10]].forEach(([freq, gain]) => {
-      const osc     = ctx.createOscillator();
+      const osc = ctx.createOscillator();
       const gainNode = ctx.createGain();
-
       osc.connect(gainNode);
       gainNode.connect(ctx.destination);
-
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now);
-
-      // Quick attack, long gentle decay
       gainNode.gain.setValueAtTime(0, now);
       gainNode.gain.linearRampToValueAtTime(gain, now + 0.01);
       gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
-
       osc.start(now);
       osc.stop(now + 2.5);
     });
-  } catch (e) {
-    // Silently fail if audio isn't available
-  }
+  } catch (e) {}
 }
 const tabBtns  = Array.from(document.querySelectorAll('.tab-btn'));
 const announcer = document.getElementById('tab-announcer');
