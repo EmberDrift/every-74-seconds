@@ -735,7 +735,51 @@ function drawTally(canvas, count) {
   }
 }
 
-// ─── TABS — keyboard accessible (arrow keys + Home/End) ──────────────────────
+// ─── BELL SOUND ──────────────────────────────────────────────────────────────
+// Uses Web Audio API to synthesize a soft chime — no file needed.
+// Browsers require user interaction before audio can play.
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// Unlock audio on first user interaction
+document.addEventListener('click', () => getAudioCtx(), { once: true });
+document.addEventListener('touchstart', () => getAudioCtx(), { once: true });
+
+function playChime() {
+  if (prefersReduced.matches) return; // respect reduced motion preference
+  try {
+    const ctx  = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const now  = ctx.currentTime;
+
+    // Two sine oscillators slightly detuned for a warm chime blend
+    [[880, 0.18], [1108, 0.10]].forEach(([freq, gain]) => {
+      const osc     = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+
+      // Quick attack, long gentle decay
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(gain, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+
+      osc.start(now);
+      osc.stop(now + 2.5);
+    });
+  } catch (e) {
+    // Silently fail if audio isn't available
+  }
+}
 const tabBtns  = Array.from(document.querySelectorAll('.tab-btn'));
 const announcer = document.getElementById('tab-announcer');
 
@@ -1028,7 +1072,11 @@ function update() {
 
   // Hero count (visual update always)
   const heroCount = getCountForRate(TOTAL);
+  const prevCount = parseInt(document.getElementById('hero-count').textContent.replace(/,/g, '')) || 0;
   document.getElementById('hero-count').textContent = heroCount.toLocaleString();
+
+  // Ring chime if count went up
+  if (heroCount > prevCount && prevCount > 0) playChime();
 
   // Throttled screen-reader announcement for hero — once every 60s max
   if (!srThrottleTimer) {
