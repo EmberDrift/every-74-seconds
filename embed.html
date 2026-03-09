@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U.S. Sexual Violence Counter — every74seconds.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .widget {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.2rem 1rem 0.8rem;
+    background: #ffffff;
+    border: 1px solid #e0f4f6;
+    border-radius: 12px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .widget-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+    color: #008C99;
+    line-height: 1.2;
+    margin-bottom: 0.15rem;
+  }
+
+  .widget-sublabel {
+    font-size: clamp(0.7rem, 1.8vw, 0.82rem);
+    color: #3d6b6f;
+    margin-bottom: 0.6rem;
+  }
+
+  .widget-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.2rem, 9vw, 3.8rem);
+    color: #008C99;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .widget-desc {
+    font-size: clamp(0.62rem, 1.6vw, 0.75rem);
+    color: #3d6b6f;
+    margin-top: 0.25rem;
+    line-height: 1.4;
+    max-width: 280px;
+  }
+
+  .widget-rate {
+    display: inline-block;
+    background: #e0f4f6;
+    color: #006870;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: clamp(0.6rem, 1.5vw, 0.72rem);
+    font-weight: 500;
+    margin-top: 0.4rem;
+  }
+
+  .widget-attribution {
+    margin-top: 0.6rem;
+    font-size: clamp(0.58rem, 1.4vw, 0.68rem);
+    color: #3d6b6f;
+  }
+
+  .widget-attribution a {
+    color: #008C99;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .widget-attribution a:hover {
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<div class="widget" role="region" aria-label="U.S. Sexual Violence Counter">
+  <div class="widget-heading">Rapes &amp; Sexual Assaults in the U.S.</div>
+  <div class="widget-sublabel">Since January 1, <span id="year-display">2026</span></div>
+  <div class="widget-number" id="counter" aria-live="polite" aria-atomic="true" aria-label="Current count">0</div>
+  <div class="widget-desc">estimated incidents of sexual violence<br>to someone age 12+ in the U.S.</div>
+  <div class="widget-rate">423,020 per year &nbsp;·&nbsp; 1 every ~74 seconds</div>
+  <div class="widget-attribution">
+    Source: <a href="https://every74seconds.com" target="_blank" rel="noopener noreferrer">every74seconds.com</a>
+    &nbsp;·&nbsp; Data: BJS NCVS
+  </div>
+</div>
+
+<script>
+const TOTAL = 423020;
+
+function getYearFraction() {
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const start = new Date(year, 0, 1).getTime();
+  const end   = new Date(year + 1, 0, 1).getTime();
+  return (now.getTime() - start) / (end - start);
+}
+
+function update() {
+  const now  = new Date();
+  document.getElementById('year-display').textContent = now.getFullYear();
+  const count = Math.floor(getYearFraction() * TOTAL);
+  document.getElementById('counter').textContent = count.toLocaleString();
+}
+
+update();
+setInterval(update, 5000);
+</script>
+
+</body>
+</html>
