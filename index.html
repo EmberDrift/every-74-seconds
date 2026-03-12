@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Still Counting — U.S. Sexual Assault Statistics</title>
+<meta name="description" content="Real-time counters showing the scale of sexual assault in the United States, based on the National Crime Victimization Survey.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #008C99;
+    --teal-dark: #006870;
+    --teal-light: #e0f4f6;
+    --teal-mid: #b3e4e8;
+    --white: #ffffff;
+    --off-white: #f7fafa;
+    --text-dark: #0d2b2d;
+    --text-mid: #2a5a5e;
+    --text-light: #3d6b6f; /* darkened from #4a7a7e to pass 4.5:1 contrast on white */
+    --icon-active: #008C99;
+    --icon-inactive: #d0eef0;
+    --tally-color: #008C99;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--off-white);
+    color: var(--text-dark);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* SKIP LINK */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    background: var(--teal);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0 0 4px 4px;
+    font-weight: 500;
+    z-index: 9999;
+    text-decoration: none;
+    transition: top 0.2s;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* HEADER */
+  header {
+    background: var(--teal);
+    color: white;
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+  header h1 em {
+    font-style: italic;
+    color: var(--teal-mid);
+  }
+  header p.subtitle {
+    margin-top: 0.6rem;
+    font-size: 1rem;
+    font-weight: 300;
+    opacity: 0.92;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .source-badges {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .source-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 20px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .source-badge:hover, .source-badge:focus {
+    background: rgba(255,255,255,0.25);
+    outline: 2px solid white;
+    outline-offset: 2px;
+  }
+
+  /* YEAR PROGRESS BAR */
+  .year-bar {
+    background: var(--teal-dark);
+    padding: 0.6rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .year-bar span {
+    color: var(--teal-mid);
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .year-progress-track {
+    flex: 1;
+    max-width: 400px;
+    height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .year-progress-fill {
+    height: 100%;
+    background: white;
+    border-radius: 3px;
+    transition: width 1s linear;
+  }
+
+  /* MAIN CONTENT */
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* HERO COUNTER SECTION */
+  .hero-section {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 2px 20px rgba(0,140,153,0.08);
+    border: 1px solid var(--teal-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .hero-label {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.2rem, 3vw, 1.6rem);
+    color: var(--teal);
+    text-align: center;
+    margin-bottom: 0.3rem;
+  }
+  .hero-sublabel {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+  .hero-count-display {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hero-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    color: var(--teal);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .hero-number-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin: 0.3rem auto 0;
+    font-weight: 500;
+    max-width: 260px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .mute-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: 1px solid var(--teal-mid);
+    color: var(--text-light);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-top: 0.6rem;
+    transition: background 0.15s, color 0.15s;
+  }
+  .mute-btn:hover, .mute-btn:focus-visible {
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+  .mute-btn.muted {
+    color: var(--text-light);
+    border-color: #ccc;
+    opacity: 0.7;
+  }
+  .rate-pill {
+    display: inline-block;
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    border-radius: 20px;
+    padding: 0.35rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+  }
+
+  .stadiums-heading {
+    text-align: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.05rem;
+    color: var(--teal-dark);
+    margin: 1.2rem 0 1rem;
+    font-style: italic;
+    width: 100%;
+  }
+
+  /* STADIUM GRID */
+  .stadiums-wrapper {
+    margin-top: 1.5rem;
+    width: 100%;
+  }
+  .stadiums-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .stadium-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .stadium-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-light);
+    text-align: center;
+  }
+  .stadium-svg-wrap {
+    position: relative;
+  }
+  /* Each stadium SVG is drawn via canvas */
+  canvas.stadium-canvas {
+    display: block;
+    border-radius: 4px;
+    border: none;
+  }
+  .stadium-fill-label {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    text-align: center;
+  }
+
+  .stadiums-legend {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text-mid);
+  }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-dot.active { background: var(--icon-active); }
+  .legend-dot.inactive { background: var(--icon-inactive); border: 1px solid #aad4d8; }
+
+  /* TABS */
+  .tabs-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 12px rgba(0,140,153,0.06);
+    border: 1px solid var(--teal-light);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .tab-bar {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: var(--teal-light);
+    border-bottom: 2px solid var(--teal-mid);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 0.65rem 1.1rem;
+    min-height: 44px; /* WCAG touch target */
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-mid);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--teal); }
+  .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); background: white; }
+  .tab-btn:focus-visible { outline: 3px solid var(--teal); outline-offset: -2px; }
+
+  .tab-panel { display: none; padding: 0.5rem 1.5rem 1rem; }
+  .tab-panel.active { display: block; }
+  .tab-note { font-size: 0.78rem; color: var(--text-light); margin-bottom: 0.8rem; padding-top: 0.5rem; }
+
+  /* STAT ROWS */
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--teal-light);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row.sub { padding-left: 1rem; background: var(--off-white); border-radius: 6px; margin: 0.15rem 0; padding: 0.5rem 0.5rem 0.5rem 1rem; border-bottom: none; }
+
+  .stat-row-info {}
+  .stat-row-name { font-weight: 500; font-size: 0.9rem; color: var(--text-dark); }
+  .stat-row-meta { font-size: 0.75rem; color: var(--text-light); margin-top: 0.1rem; }
+
+  .stat-row-right { text-align: right; flex-shrink: 0; }
+  .stat-count-num { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--teal); line-height: 1; }
+  .stat-count-small { font-size: 0.7rem; color: var(--text-light); margin-top: 0.1rem; }
+
+  /* TALLY CANVAS for sub-rows */
+  canvas.tally-canvas {
+    display: block;
+    margin-top: 0.3rem;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .stat-row-info {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .tally-legend {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-light);
+    padding: 0.6rem 0 0.2rem;
+    border-bottom: 1px dashed var(--teal-light);
+    margin-bottom: 0.2rem;
+  }
+
+  /* PROGRESS BARS */
+  .progress-track {
+    margin-top: 0.35rem;
+    height: 5px;
+    background: var(--teal-light);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--teal);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 1s linear;
+  }
+
+  @media (max-width: 600px) {
+    .stat-row { grid-template-columns: 1fr; }
+    .stat-row-right { text-align: left; }
+  }
+
+  /* RESOURCES */
+  .resources {
+    background: var(--teal);
+    color: white;
+    border-radius: 12px;
+    padding: 1.8rem;
+    margin-top: 2.5rem;
+    text-align: center;
+  }
+  .resources h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .resources p { font-size: 0.9rem; opacity: 0.9; margin-bottom: 1.2rem; }
+  .resource-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+  }
+  .resource-link {
+    background: white;
+    color: var(--teal-dark);
+    padding: 0.65rem 1.2rem;
+    min-height: 44px; /* WCAG touch target */
+    display: inline-flex;
+    align-items: center;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.88rem;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .resource-link:hover, .resource-link:focus {
+    background: var(--teal-light);
+    outline: 2px solid white;
+    outline-offset: 2px;
+  }
+
+  /* METHODOLOGY */
+  .methodology {
+    margin-top: 1.5rem;
+    padding: 1.2rem 1.5rem;
+    background: var(--teal-light);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: var(--text-mid);
+    line-height: 1.7;
+  }
+  .methodology strong { color: var(--teal-dark); }
+
+  .take-action-wrap {
+    text-align: center;
+    margin-top: 2rem;
+  }
+  .take-action-btn {
+    display: inline-block;
+    background: var(--teal);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    padding: 0.75rem 2rem;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .take-action-btn:hover, .take-action-btn:focus {
+    background: var(--teal-dark);
+    outline: 3px solid var(--teal);
+    outline-offset: 3px;
+  }
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    border-top: 1px solid var(--teal-light);
+    margin-top: 2rem;
+  }
+  footer a { color: var(--teal); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Focus styles for accessibility */
+  :focus-visible {
+    outline: 3px solid var(--teal);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 600px) {
+    .stat-row { grid-template-columns: 1fr; }
+    .stat-row-right { text-align: left; }
+    .stadiums-grid { gap: 1rem; }
+    .hero-section { align-items: center; }
+    .hero-label,
+    .hero-sublabel,
+    .hero-count-display,
+    .stadiums-heading { text-align: center; width: 100%; }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+    .year-progress-fill { transition: none !important; }
+  }
+
+  /* Visually hidden but available to screen readers */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .embed-section {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+  .embed-details {
+    display: inline-block;
+    background: white;
+    border: 1px solid var(--teal-mid);
+    border-radius: 10px;
+    padding: 0.75rem 1.2rem;
+    text-align: left;
+    max-width: 600px;
+    width: 100%;
+  }
+  .embed-summary {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--teal-dark);
+    cursor: pointer;
+    list-style: none;
+    text-align: center;
+  }
+  .embed-summary::-webkit-details-marker { display: none; }
+  .embed-body { margin-top: 0.8rem; }
+  .embed-desc {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+  }
+  .embed-code-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--off-white);
+    border: 1px solid var(--teal-light);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+  }
+  .embed-code {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: var(--text-mid);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .embed-copy-btn {
+    flex-shrink: 0;
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    min-height: 44px;
+    transition: background 0.15s;
+  }
+  .embed-copy-btn:hover, .embed-copy-btn:focus-visible {
+    background: var(--teal-dark);
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<header role="banner">
+  <h1>Still <em>Counting</em></h1>
+  <p class="subtitle">Real-time scale of sexual assault in the United States, based on the National Crime Victimization Survey.</p>
+  <div class="source-badges">
+    <a href="https://bjs.ojp.gov/data-collection/ncvs" class="source-badge" target="_blank" rel="noopener noreferrer" aria-label="Source: Bureau of Justice Statistics NCVS (opens in new tab)">Source: BJS National Crime Victimization Survey</a>
+    <a href="https://rainn.org/get-informed/facts-statistics-the-scope-of-the-problem/" class="source-badge" target="_blank" rel="noopener noreferrer" aria-label="Source: RAINN statistics (opens in new tab)">Source: RAINN</a>
+  </div>
+</header>
+
+<div class="year-bar" role="complementary" aria-label="Year progress">
+  <span id="year-label" aria-live="polite">2025</span>
+  <div class="year-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Year progress">
+    <div class="year-progress-fill" id="year-progress-fill" style="width:0%"></div>
+  </div>
+  <span id="year-pct" aria-live="polite">0% of year elapsed</span>
+</div>
+
+<main id="main-content">
+
+  <!-- HERO: OVERALL COUNTER -->
+  <section class="hero-section" aria-labelledby="hero-heading">
+    <h2 class="hero-label" id="hero-heading">Rapes &amp; Sexual Assaults in the U.S.</h2>
+    <p class="hero-sublabel">Since January 1, <span id="current-year-display">2025</span></p>
+    <div class="hero-count-display">
+      <div class="hero-number" id="hero-count" aria-live="off" role="text">0</div>
+      <div class="sr-only" id="hero-count-sr" aria-live="polite" aria-atomic="true"></div>
+      <div class="hero-number-label" aria-hidden="true">estimated incidents of sexual violence<br>to someone age 12+ in the U.S.</div>
+      <div class="rate-pill">423,020 per year &nbsp;·&nbsp; 1 every ~74 seconds</div>
+      <button class="mute-btn" id="mute-btn" aria-pressed="false" aria-label="Mute bell sound">🔔 Mute bell</button>
+    </div>
+
+    <p class="stadiums-heading">Each Stadium Represents an Average Sized Professional Football Stadium</p>
+
+    <div class="stadiums-wrapper" aria-label="Stadium visualization: each of 6 stadiums represents 70,500 incidents. Each person icon represents 35 victims. Icons fill in as the year progresses.">
+      <div class="stadiums-grid" id="stadiums-grid" role="img" aria-label="Six football stadiums made of person icons, filling in to represent 423,000 annual sexual assaults"></div>
+    </div>
+
+    <div class="stadiums-legend" aria-hidden="true">
+      <div class="legend-item"><div class="legend-dot active"></div><span>Counted this year</span></div>
+      <div class="legend-item"><div class="legend-dot inactive"></div><span>Remaining</span></div>
+      <div class="legend-item" style="font-size:0.75rem; color: var(--text-light);">Each stadium = 70,500 people &nbsp;·&nbsp; Each icon = 35 people &nbsp;·&nbsp; 2,000 icons per stadium</div>
+    </div>
+  </section>
+
+  <!-- TABBED STAT SECTIONS -->
+  <div class="tabs-container" role="region" aria-label="Detailed statistics by category">
+    <!-- Screen-reader-only live region for tab announcements -->
+    <div id="tab-announcer" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    <div class="tab-bar" role="tablist" aria-label="Statistic categories">
+      <button class="tab-btn active" role="tab" aria-selected="true"  aria-controls="tab-age"      id="btn-age">By Age</button>
+      <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-children"  id="btn-children">Children</button>
+      <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-rel"       id="btn-rel">Relationship</button>
+      <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-perage"    id="btn-perage"><span aria-hidden="true">Perp. Age</span><span class="sr-only">Perpetrator Age</span></button>
+      <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-prace"     id="btn-prace"><span aria-hidden="true">Perp. Race</span><span class="sr-only">Perpetrator Race</span></button>
+      <button class="tab-btn"        role="tab" aria-selected="false" aria-controls="tab-special"   id="btn-special">Special Populations</button>
+    </div>
+
+    <!-- BY AGE -->
+    <div class="tab-panel active" id="tab-age" role="tabpanel" aria-labelledby="btn-age">
+      <p class="tally-legend">Each tally mark = 3,000 people</p>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Ages 12–34</div><div class="stat-row-meta">69% · 291,884/year</div><canvas class="tally-canvas" id="tally-age-1234" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-age-1234" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row sub"><div class="stat-row-info"><div class="stat-row-name">↳ Ages 12–17</div><div class="stat-row-meta">15% · 63,453/year</div><canvas class="tally-canvas" id="tally-age-1217" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-age-1217" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row sub"><div class="stat-row-info"><div class="stat-row-name">↳ Ages 18–34</div><div class="stat-row-meta">54% · 228,431/year</div><canvas class="tally-canvas" id="tally-age-1834" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-age-1834" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Age 65+</div><div class="stat-row-meta">3% · 12,691/year</div><canvas class="tally-canvas" id="tally-age-65" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-age-65" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+    </div>
+
+    <!-- CHILDREN -->
+    <div class="tab-panel" id="tab-children" role="tabpanel" aria-labelledby="btn-children">
+      <p class="tally-legend">Each tally mark = 3,000 people</p>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">All children (under 18)</div><div class="stat-row-meta">63,000/year · 1 every ~8.3 min</div><canvas class="tally-canvas" id="tally-child-all" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-child-all" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row sub"><div class="stat-row-info"><div class="stat-row-name">↳ Ages 12–17</div><div class="stat-row-meta">66% · 41,580/year</div><canvas class="tally-canvas" id="tally-child-1217" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-child-1217" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row sub"><div class="stat-row-info"><div class="stat-row-name">↳ Under age 12</div><div class="stat-row-meta">34% · 21,420/year</div><canvas class="tally-canvas" id="tally-child-u12" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-child-u12" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+    </div>
+
+    <!-- BY RELATIONSHIP -->
+    <div class="tab-panel" id="tab-rel" role="tabpanel" aria-labelledby="btn-rel">
+      <p class="tally-legend">Each tally mark = 3,000 people</p>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Known to victim</div><div class="stat-row-meta">60% · 253,812/year</div><canvas class="tally-canvas" id="tally-rel-known" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-rel-known" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Acquaintances</div><div class="stat-row-meta">28.3% · 119,715/year</div><canvas class="tally-canvas" id="tally-rel-acq" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-rel-acq" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Intimate partners</div><div class="stat-row-meta">21.4% · 90,526/year</div><canvas class="tally-canvas" id="tally-rel-intimate" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-rel-intimate" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Other relatives</div><div class="stat-row-meta">13.1% · 55,416/year</div><canvas class="tally-canvas" id="tally-rel-family" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-rel-family" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Strangers</div><div class="stat-row-meta">31% · 131,136/year</div><canvas class="tally-canvas" id="tally-rel-stranger" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-rel-stranger" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Unknown perpetrators</div><div class="stat-row-meta">3.7% · 15,652/year</div><canvas class="tally-canvas" id="tally-rel-unk" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-rel-unk" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+    </div>
+
+    <!-- PERP AGE -->
+    <div class="tab-panel" id="tab-perage" role="tabpanel" aria-labelledby="btn-perage">
+      <p class="tally-legend">Each tally mark = 3,000 people</p>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Age 30 or older</div><div class="stat-row-meta">50% · 211,510/year</div><canvas class="tally-canvas" id="tally-page-30" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-page-30" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Ages 21–29</div><div class="stat-row-meta">25% · 105,755/year</div><canvas class="tally-canvas" id="tally-page-2129" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-page-2129" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Ages 18–20</div><div class="stat-row-meta">9% · 38,072/year</div><canvas class="tally-canvas" id="tally-page-1820" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-page-1820" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Age 17 or younger</div><div class="stat-row-meta">15% · 63,453/year</div><canvas class="tally-canvas" id="tally-page-u17" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-page-u17" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+    </div>
+
+    <!-- PERP RACE -->
+    <div class="tab-panel" id="tab-prace" role="tabpanel" aria-labelledby="btn-prace">
+      <p class="tally-legend">Each tally mark = 3,000 people &nbsp;·&nbsp; Victim-reported figures — reflect victim perception, not verified identity.</p>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">White</div><div class="stat-row-meta">57% · 241,121/year</div><canvas class="tally-canvas" id="tally-prace-w" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-prace-w" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Black</div><div class="stat-row-meta">27% · 114,215/year</div><canvas class="tally-canvas" id="tally-prace-b" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-prace-b" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Other</div><div class="stat-row-meta">6% · 25,381/year</div><canvas class="tally-canvas" id="tally-prace-o" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-prace-o" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Mixed</div><div class="stat-row-meta">1% · 4,230/year</div><canvas class="tally-canvas" id="tally-prace-m" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-prace-m" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Unknown</div><div class="stat-row-meta">8% · 33,842/year</div><canvas class="tally-canvas" id="tally-prace-u" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-prace-u" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+    </div>
+
+    <!-- SPECIAL POPULATIONS -->
+    <div class="tab-panel" id="tab-special" role="tabpanel" aria-labelledby="btn-special">
+      <p class="tally-legend">Each tally mark = 3,000 people</p>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Incarcerated people</div><div class="stat-row-meta">80,600/year · 1 every ~6.5 min</div><canvas class="tally-canvas" id="tally-sp-incarcerated" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-sp-incarcerated" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Indigenous Americans</div><div class="stat-row-meta">5,900/year · 1 every ~89 min</div><canvas class="tally-canvas" id="tally-sp-indigenous" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-sp-indigenous" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Military — reported</div><div class="stat-row-meta">6,053/year</div><canvas class="tally-canvas" id="tally-sp-mil-rep" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-sp-mil-rep" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+      <div class="stat-row"><div class="stat-row-info"><div class="stat-row-name">Military — estimated actual</div><div class="stat-row-meta">20,500/year · ~70% unreported</div><canvas class="tally-canvas" id="tally-sp-mil-est" aria-hidden="true"></canvas></div><div class="stat-row-right"><div class="stat-count-num" id="count-sp-mil-est" aria-live="polite">0</div><div class="stat-count-small">this year</div></div></div>
+    </div>
+  </div>
+
+  <!-- METHODOLOGY -->
+  <div class="methodology" role="note" aria-label="Methodology note">
+    <strong>Methodology:</strong> All counters are anchored to January 1st of the current year and advance in real time based on annual NCVS rates. Two visitors viewing the page at the same moment will see identical counts. Statistics are from the Bureau of Justice Statistics National Crime Victimization Survey. Child sexual abuse figures are from the Darkness to Light / Finkelhor research. Military figures are from DoD Sexual Assault Prevention and Response annual reports. These are estimates; actual incidence is likely higher due to underreporting.
+  </div>
+
+  <!-- RESOURCES -->
+  <div class="resources" role="complementary" aria-label="Support resources">
+    <h2>If You Need Support</h2>
+    <p>You are not alone. Confidential help is available 24/7.</p>
+    <div class="resource-links">
+      <a href="https://www.rainn.org" class="resource-link" target="_blank" rel="noopener noreferrer">RAINN (rainn.org)</a>
+      <a href="tel:18006564673" class="resource-link" aria-label="Call RAINN hotline: 1-800-656-HOPE">📞 1-800-656-HOPE</a>
+      <a href="https://hotline.rainn.org/online" class="resource-link" target="_blank" rel="noopener noreferrer">Online Chat</a>
+      <a href="https://www.thehotline.org" class="resource-link" target="_blank" rel="noopener noreferrer">Domestic Violence Hotline</a>
+      <a href="https://www.childhelp.org/hotline/" class="resource-link" target="_blank" rel="noopener noreferrer">Childhelp Hotline</a>
+    </div>
+  </div>
+
+  <div class="take-action-wrap">
+    <a href="https://www.rainn.org" class="take-action-btn" target="_blank" rel="noopener noreferrer">Feel Moved? Take Action!</a>
+  </div>
+
+  <div class="embed-section">
+    <details class="embed-details">
+      <summary class="embed-summary">Embed the main counter to your site</summary>
+      <div class="embed-body">
+        <p class="embed-desc">Copy and paste this into your website's HTML:</p>
+        <div class="embed-code-wrap">
+          <code class="embed-code" id="embed-code">&lt;iframe src="https://every74seconds.com/embed.html" width="380" height="210" frameborder="0" scrolling="no" title="U.S. Sexual Violence Counter"&gt;&lt;/iframe&gt;</code>
+          <button class="embed-copy-btn" id="embed-copy-btn" aria-label="Copy embed code">Copy</button>
+        </div>
+      </div>
+    </details>
+  </div>
+
+</main>
+
+<footer>
+  <p>Data source: <a href="https://bjs.ojp.gov/data-collection/ncvs" target="_blank" rel="noopener noreferrer">Bureau of Justice Statistics, National Crime Victimization Survey</a></p>
+  <p style="margin-top:0.4rem;">Open source &nbsp;·&nbsp; No tracking &nbsp;·&nbsp; No cookies</p>
+  <p style="margin-top:0.6rem;">Page Created by <a href="https://github.com/EmberDrift" target="_blank" rel="noopener noreferrer">EmberDrift</a></p>
+</footer>
+
+<script>
+// ─── TIME ENGINE ─────────────────────────────────────────────────────────────
+const TOTAL = 423000;
+const STADIUMS = 6;
+const PER_STADIUM = 70500; // 423000 / 6
+
+function getYearFraction() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const start = new Date(year, 0, 1).getTime();
+  const end = new Date(year + 1, 0, 1).getTime();
+  return (now.getTime() - start) / (end - start);
+}
+
+function getCountForRate(perYear) {
+  return Math.floor(getYearFraction() * perYear);
+}
+
+// ─── STATS CONFIG ────────────────────────────────────────────────────────────
+// All stats use tally canvases. Each mark = 3,000 people.
+// Max marks at year-end: Known to victim 253,812 ÷ 3,000 = ~85 marks = 17 groups → one row.
+const PEOPLE_PER_TALLY = 3000;
+
+const stats = [
+  { id: 'count-age-1234',        tallyId: 'tally-age-1234',        perYear: 291884, type: 'tally' },
+  { id: 'count-age-1217',        tallyId: 'tally-age-1217',        perYear: 63453,  type: 'tally' },
+  { id: 'count-age-1834',        tallyId: 'tally-age-1834',        perYear: 228431, type: 'tally' },
+  { id: 'count-age-65',          tallyId: 'tally-age-65',          perYear: 12691,  type: 'tally' },
+  { id: 'count-child-all',       tallyId: 'tally-child-all',       perYear: 63000,  type: 'tally' },
+  { id: 'count-child-1217',      tallyId: 'tally-child-1217',      perYear: 41580,  type: 'tally' },
+  { id: 'count-child-u12',       tallyId: 'tally-child-u12',       perYear: 21420,  type: 'tally' },
+  { id: 'count-rel-known',       tallyId: 'tally-rel-known',       perYear: 253812, type: 'tally' },
+  { id: 'count-rel-acq',         tallyId: 'tally-rel-acq',         perYear: 119715, type: 'tally' },
+  { id: 'count-rel-intimate',    tallyId: 'tally-rel-intimate',    perYear: 90526,  type: 'tally' },
+  { id: 'count-rel-family',      tallyId: 'tally-rel-family',      perYear: 55416,  type: 'tally' },
+  { id: 'count-rel-stranger',    tallyId: 'tally-rel-stranger',    perYear: 131136, type: 'tally' },
+  { id: 'count-rel-unk',         tallyId: 'tally-rel-unk',         perYear: 15652,  type: 'tally' },
+  { id: 'count-page-30',         tallyId: 'tally-page-30',         perYear: 211510, type: 'tally' },
+  { id: 'count-page-2129',       tallyId: 'tally-page-2129',       perYear: 105755, type: 'tally' },
+  { id: 'count-page-1820',       tallyId: 'tally-page-1820',       perYear: 38072,  type: 'tally' },
+  { id: 'count-page-u17',        tallyId: 'tally-page-u17',        perYear: 63453,  type: 'tally' },
+  { id: 'count-prace-w',         tallyId: 'tally-prace-w',         perYear: 241121, type: 'tally' },
+  { id: 'count-prace-b',         tallyId: 'tally-prace-b',         perYear: 114215, type: 'tally' },
+  { id: 'count-prace-o',         tallyId: 'tally-prace-o',         perYear: 25381,  type: 'tally' },
+  { id: 'count-prace-m',         tallyId: 'tally-prace-m',         perYear: 4230,   type: 'tally' },
+  { id: 'count-prace-u',         tallyId: 'tally-prace-u',         perYear: 33842,  type: 'tally' },
+  { id: 'count-sp-incarcerated', tallyId: 'tally-sp-incarcerated', perYear: 80600,  type: 'tally' },
+  { id: 'count-sp-indigenous',   tallyId: 'tally-sp-indigenous',   perYear: 5900,   type: 'tally' },
+  { id: 'count-sp-mil-rep',      tallyId: 'tally-sp-mil-rep',      perYear: 6053,   type: 'tally' },
+  { id: 'count-sp-mil-est',      tallyId: 'tally-sp-mil-est',      perYear: 20500,  type: 'tally' },
+];
+
+// ─── TALLY RENDERING ─────────────────────────────────────────────────────────
+// All tally rows share PEOPLE_PER_TALLY = 3,000 so marks are comparable.
+// Max marks at year end for largest sub-stat (228,431 ages 18-34):
+//   ceil(228431/3000) = 77 marks = 16 groups → fits comfortably in one row.
+
+function drawTally(canvas, count) {
+  const totalMarks = Math.floor(count / PEOPLE_PER_TALLY);
+  const groups     = Math.floor(totalMarks / 5);
+
+  // Fixed layout: always render enough placeholders for the largest sub-stat
+  // at year end: ceil(228431/3000/5) = 16 groups
+  const MAX_GROUPS = 16;
+
+  const gW = 13, gH = 14, gap = 4;
+  const colW = gW + gap;
+  const W = MAX_GROUPS * colW;
+  const H = gH + 2;
+
+  canvas.width  = W;
+  canvas.height = H;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  ctx.lineWidth = 1.5;
+  ctx.lineCap   = 'round';
+
+  for (let g = 0; g < MAX_GROUPS; g++) {
+    const x            = g * colW;
+    const marksInGroup = Math.min(5, Math.max(0, totalMarks - g * 5));
+    const complete     = g < groups;
+
+    // 4 verticals
+    for (let v = 0; v < 4; v++) {
+      const active = v < (complete ? 4 : Math.min(4, marksInGroup));
+      ctx.strokeStyle = active ? '#008C99' : '#d0eef0';
+      const lx = x + v * 3 + 1;
+      ctx.beginPath();
+      ctx.moveTo(lx, 1);
+      ctx.lineTo(lx, H - 1);
+      ctx.stroke();
+    }
+
+    // Diagonal slash
+    ctx.strokeStyle = (complete || marksInGroup === 5) ? '#008C99' : '#d0eef0';
+    ctx.beginPath();
+    ctx.moveTo(x,          H - 1);
+    ctx.lineTo(x + gW - 1, 1);
+    ctx.stroke();
+  }
+}
+
+// ─── BELL SOUND ──────────────────────────────────────────────────────────────
+let audioCtx = null;
+let bellMuted = true; // start muted on all devices
+
+const muteBtn = document.getElementById('mute-btn');
+
+// Set initial button state to muted
+muteBtn.textContent = '🔕 Unmute bell';
+muteBtn.setAttribute('aria-label', 'Unmute bell sound');
+muteBtn.setAttribute('aria-pressed', 'true');
+muteBtn.classList.add('muted');
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playChime() {
+  if (bellMuted) return;
+  if (prefersReduced.matches) return;
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    [[880, 0.18], [1108, 0.10]].forEach(([freq, gain]) => {
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(gain, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+      osc.start(now);
+      osc.stop(now + 2.5);
+    });
+  } catch (e) {}
+}
+
+muteBtn.addEventListener('click', () => {
+  // Unlock audio context on this direct interaction (required by all browsers)
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+  } catch(e) {}
+
+  bellMuted = !bellMuted;
+  muteBtn.setAttribute('aria-pressed', bellMuted);
+  muteBtn.textContent = bellMuted ? '🔕 Unmute bell' : '🔔 Mute bell';
+  muteBtn.setAttribute('aria-label', bellMuted ? 'Unmute bell sound' : 'Mute bell sound');
+  muteBtn.classList.toggle('muted', bellMuted);
+
+  // Play a confirmation chime when unmuting
+  if (!bellMuted) playChime();
+});
+
+const tabBtns  = Array.from(document.querySelectorAll('.tab-btn'));
+const announcer = document.getElementById('tab-announcer');
+
+function activateTab(btn) {
+  tabBtns.forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+    b.setAttribute('tabindex', '-1');
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+  btn.setAttribute('tabindex', '0');
+  btn.focus();
+  document.getElementById(btn.getAttribute('aria-controls')).classList.add('active');
+  // Announce to screen readers
+  const label = btn.querySelector('.sr-only') ? btn.querySelector('.sr-only').textContent : btn.textContent;
+  announcer.textContent = label.trim() + ' tab selected';
+}
+
+tabBtns.forEach((btn, i) => {
+  btn.setAttribute('tabindex', btn.classList.contains('active') ? '0' : '-1');
+  btn.addEventListener('click', () => activateTab(btn));
+  btn.addEventListener('keydown', e => {
+    let target = null;
+    if (e.key === 'ArrowRight') target = tabBtns[(i + 1) % tabBtns.length];
+    if (e.key === 'ArrowLeft')  target = tabBtns[(i - 1 + tabBtns.length) % tabBtns.length];
+    if (e.key === 'Home')       target = tabBtns[0];
+    if (e.key === 'End')        target = tabBtns[tabBtns.length - 1];
+    if (target) { e.preventDefault(); activateTab(target); }
+  });
+});
+
+// ─── STADIUM RENDERING ───────────────────────────────────────────────────────
+// 6 stadiums · 2,000 dots each · each dot = 35 people
+// Optimisations:
+//   1. Dot positions computed ONCE and cached per size breakpoint
+//   2. Two offscreen canvases per stadium (full / empty background) built ONCE
+//   3. Live draw = drawImage(background) + draw only the active dot layer delta
+//   4. Per-stadium last-fill tracking — skip redraw when count hasn't changed
+//   5. Stadiums staggered across animation frames so no single frame does all 6
+
+const ICONS_PER_STADIUM = 2000;
+const PEOPLE_PER_ICON   = 35;
+
+// Cache keyed by "WxH"
+let cachedPositions   = null;
+let cachedSize        = null;  // { W, H }
+
+// Per-stadium state
+const stadiumState = Array.from({ length: STADIUMS }, () => ({
+  lastDotsToFill: -1,
+  offscreenEmpty: null,  // pre-rendered background with all dots inactive
+  offscreenFull:  null,  // pre-rendered background with all dots active
+}));
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function roundedRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y,     x + w, y + r,     r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x,     y + h, x,     y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x,     y,     x + r, y,         r);
+  ctx.closePath();
+}
+
+function getStadiumSize() {
+  const isMobile = window.innerWidth < 600;
+  const W = isMobile ? 210 : 290;
+  return { W, H: Math.round(W * 0.62), isMobile };
+}
+
+// ── Position cache ────────────────────────────────────────────────────────────
+// Recompute only when viewport size class changes (mobile ↔ desktop)
+function getPositions(W, H, isMobile) {
+  const key = `${W}x${H}`;
+  if (cachedSize === key) return cachedPositions;
+
+  const cx = W / 2, cy = H / 2;
+  const pad  = 3;
+  const dotR = isMobile ? 2.2 : 2.8;
+  const spacing = dotR * 2 + (isMobile ? 1.0 : 1.2);
+
+  const fieldW  = W * 0.52, fieldH = H * 0.42;
+  const seatRx  = W / 2 - pad - dotR - 1;
+  const seatRy  = H / 2 - pad - dotR - 1;
+  const exclRx  = fieldW / 2 + dotR * 2.5;
+  const exclRy  = fieldH / 2 + dotR * 2.5;
+
+  const positions = [];
+  for (let py = pad + dotR + 1; py < H - pad - dotR - 1; py += spacing) {
+    for (let px = pad + dotR + 1; px < W - pad - dotR - 1; px += spacing) {
+      const inOuter = ((px-cx)/seatRx)**2 + ((py-cy)/seatRy)**2 <= 1.0;
+      const inField  = ((px-cx)/exclRx)**2 + ((py-cy)/exclRy)**2 <= 1.0;
+      if (inOuter && !inField) positions.push([px, py]);
+    }
+  }
+
+  cachedPositions = positions;
+  cachedSize      = key;
+  // Invalidate offscreen caches when size changes
+  stadiumState.forEach(s => { s.offscreenEmpty = null; s.offscreenFull = null; s.lastDotsToFill = -1; });
+  return positions;
+}
+
+// ── Draw static background layer (field + all dots in one colour) ────────────
+function buildStaticCanvas(W, H, isMobile, positions, dotActive) {
+  const oc  = document.createElement('canvas');
+  oc.width  = W;
+  oc.height = H;
+  const ctx = oc.getContext('2d');
+  const cx  = W / 2, cy = H / 2, pad = 3;
+  const dotR = isMobile ? 2.2 : 2.8;
+
+  // Stadium background
+  const cornerR = Math.min(W/2 - pad, H/2 - pad) * 0.55;
+  ctx.fillStyle = '#e0f4f6';
+  roundedRect(ctx, pad, pad, W - pad*2, H - pad*2, cornerR);
+  ctx.fill();
+  ctx.strokeStyle = '#008C99';
+  ctx.lineWidth = 2;
+  roundedRect(ctx, pad, pad, W - pad*2, H - pad*2, cornerR);
+  ctx.stroke();
+
+  // Football field
+  const fieldW = W * 0.52, fieldH = H * 0.42;
+  const fieldX = cx - fieldW/2, fieldY = cy - fieldH/2;
+  const fieldCorner = fieldH * 0.48;
+  ctx.fillStyle = '#4a9e5c';
+  roundedRect(ctx, fieldX, fieldY, fieldW, fieldH, fieldCorner);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(cx, fieldY+2); ctx.lineTo(cx, fieldY+fieldH-2); ctx.stroke();
+  for (let i = 1; i <= 3; i++) {
+    const lx = fieldX + fieldCorner*0.6 + (fieldW - fieldCorner*1.2)*(i/4);
+    ctx.beginPath(); ctx.moveTo(lx, fieldY+2); ctx.lineTo(lx, fieldY+fieldH-2); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  const ezW = (fieldW - fieldCorner*1.2)*0.12;
+  [[fieldX+fieldCorner*0.6+ezW], [fieldX+fieldW-fieldCorner*0.6-ezW]].forEach(([lx]) => {
+    ctx.beginPath(); ctx.moveTo(lx, fieldY+2); ctx.lineTo(lx, fieldY+fieldH-2); ctx.stroke();
+  });
+
+  // All dots in one colour
+  ctx.fillStyle = dotActive ? '#008C99' : '#b3e4e8';
+  for (const [px, py] of positions) {
+    ctx.beginPath();
+    ctx.arc(px, py, dotR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  return oc;
+}
+
+// ── Build DOM for each stadium ────────────────────────────────────────────────
+function buildStadiums() {
+  const grid = document.getElementById('stadiums-grid');
+  grid.innerHTML = '';
+  for (let s = 0; s < STADIUMS; s++) {
+    const container = document.createElement('div');
+    container.className = 'stadium-container';
+
+    const label = document.createElement('div');
+    label.className = 'stadium-label';
+    label.textContent = `Stadium ${s + 1}`;
+    label.setAttribute('aria-hidden', 'true');
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'stadium-canvas';
+    canvas.id = `stadium-${s}`;
+    canvas.setAttribute('aria-hidden', 'true');
+
+    container.appendChild(label);
+    container.appendChild(canvas);
+    grid.appendChild(container);
+  }
+}
+
+// ── Main draw — composites offscreen layers, draws only changed dots ──────────
+function drawStadium(stadiumIndex, filledVictimCount) {
+  const canvas = document.getElementById(`stadium-${stadiumIndex}`);
+  if (!canvas) return;
+
+  const { W, H, isMobile } = getStadiumSize();
+  const positions = getPositions(W, H, isMobile);
+  const state     = stadiumState[stadiumIndex];
+  const dotR      = isMobile ? 2.2 : 2.8;
+  const total     = positions.length;
+
+  const iconsToFill = Math.min(ICONS_PER_STADIUM, Math.floor(filledVictimCount / PEOPLE_PER_ICON));
+  const dotsToFill  = Math.floor((iconsToFill / ICONS_PER_STADIUM) * total);
+
+  // Skip entirely if nothing changed
+  if (dotsToFill === state.lastDotsToFill) return;
+
+  // Resize canvas only when dimensions changed
+  if (canvas.width !== W || canvas.height !== H) {
+    canvas.width  = W;
+    canvas.height = H;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+  }
+
+  // Build offscreen caches once per size
+  if (!state.offscreenEmpty) {
+    state.offscreenEmpty = buildStaticCanvas(W, H, isMobile, positions, false);
+    state.offscreenFull  = buildStaticCanvas(W, H, isMobile, positions, true);
+  }
+
+  const ctx  = canvas.getContext('2d');
+  const prev = state.lastDotsToFill < 0 ? 0 : state.lastDotsToFill;
+
+  if (dotsToFill === 0) {
+    // Full empty — just blit
+    ctx.drawImage(state.offscreenEmpty, 0, 0);
+  } else if (dotsToFill >= total) {
+    // Full active — just blit
+    ctx.drawImage(state.offscreenFull, 0, 0);
+  } else if (prev < 0 || dotsToFill < prev) {
+    // Count went backward (year rollover) or first paint — blit empty then paint active range
+    ctx.drawImage(state.offscreenEmpty, 0, 0);
+    ctx.fillStyle = '#008C99';
+    for (let i = 0; i < dotsToFill; i++) {
+      const [px, py] = positions[i];
+      ctx.beginPath(); ctx.arc(px, py, dotR, 0, Math.PI * 2); ctx.fill();
+    }
+  } else {
+    // Count went forward — blit previous frame then paint only the NEW dots
+    // (avoids redrawing all existing active dots)
+    if (prev === 0) {
+      ctx.drawImage(state.offscreenEmpty, 0, 0);
+    }
+    // Only stroke the delta (prev → dotsToFill)
+    ctx.fillStyle = '#008C99';
+    for (let i = prev; i < dotsToFill; i++) {
+      const [px, py] = positions[i];
+      ctx.beginPath(); ctx.arc(px, py, dotR, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  state.lastDotsToFill = dotsToFill;
+}
+
+// ─── UPDATE LOOP ─────────────────────────────────────────────────────────────
+let lastHeroCount    = -1;
+let stadiumRafHandle = null;
+let srThrottleTimer  = null;   // throttle screen-reader hero announcements
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function scheduleStadiumRedraws(heroCount) {
+  let frame = 0;
+  function drawNext() {
+    if (frame >= STADIUMS) return;
+    const s = frame++;
+    const victims = Math.min(PER_STADIUM, Math.max(0, heroCount - s * PER_STADIUM));
+    drawStadium(s, victims);
+    // Update stadium canvas aria-label
+    const canvas = document.querySelector(`#stadiums-grid .stadium-container:nth-child(${s+1}) canvas`);
+    if (canvas) {
+      const filled = Math.round(victims / PER_STADIUM * 100);
+      canvas.setAttribute('aria-label', `Stadium ${s+1} of 6: ${victims.toLocaleString()} of 70,500 people represented (${filled}%)`);
+    }
+    requestAnimationFrame(drawNext);
+  }
+  requestAnimationFrame(drawNext);
+}
+
+function update() {
+  const now  = new Date();
+  const year = now.getFullYear();
+  const frac = getYearFraction();
+
+  // Year UI + aria-valuetext
+  document.getElementById('year-label').textContent = year;
+  document.getElementById('current-year-display').textContent = year;
+  const pct = (frac * 100).toFixed(1);
+  document.getElementById('year-pct').textContent = pct + '% of year elapsed';
+  const fillEl = document.getElementById('year-progress-fill');
+  const track  = fillEl.parentElement;
+  fillEl.style.width = pct + '%';
+  track.setAttribute('aria-valuenow', pct);
+  track.setAttribute('aria-valuetext', pct + '% of ' + year + ' elapsed');
+
+  // Hero count (visual update always)
+  const heroCount = getCountForRate(TOTAL);
+  const prevCount = parseInt(document.getElementById('hero-count').textContent.replace(/,/g, '')) || 0;
+  document.getElementById('hero-count').textContent = heroCount.toLocaleString();
+
+  // Ring chime if count went up
+  if (heroCount > prevCount && prevCount > 0) playChime();
+
+  // Throttled screen-reader announcement for hero — once every 60s max
+  if (!srThrottleTimer) {
+    const srEl = document.getElementById('hero-count-sr');
+    if (srEl) srEl.textContent = heroCount.toLocaleString() + ' estimated incidents of sexual violence to someone age 12 or older in the U.S. this year';
+    srThrottleTimer = setTimeout(() => { srThrottleTimer = null; }, 60000);
+  }
+
+  // Stadiums — skip if reduced motion (canvases are static aria-described)
+  if (heroCount !== lastHeroCount) {
+    lastHeroCount = heroCount;
+    if (!prefersReduced.matches) {
+      scheduleStadiumRedraws(heroCount);
+    }
+  }
+
+  // Secondary counters + tallies
+  // Batch count reads, only draw tallies if not in reduced-motion mode
+  stats.forEach(stat => {
+    const count = getCountForRate(stat.perYear);
+    const el = document.getElementById(stat.id);
+    if (el) el.textContent = count.toLocaleString();
+    if (!prefersReduced.matches) {
+      const canvas = document.getElementById(stat.tallyId);
+      if (canvas) {
+        drawTally(canvas, count);
+        // Keep aria-label on each canvas updated for screen readers
+        const marks = Math.floor(count / PEOPLE_PER_TALLY);
+        canvas.setAttribute('aria-label', `${count.toLocaleString()} people — ${marks} tally marks, each representing ${PEOPLE_PER_TALLY.toLocaleString()} people`);
+      }
+    }
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildStadiums();
+// Initial stadium aria-labels
+document.querySelectorAll('#stadiums-grid .stadium-container canvas').forEach((c, i) => {
+  c.setAttribute('aria-label', `Stadium ${i+1} of 6: loading…`);
+  c.setAttribute('role', 'img');
+});
+update();
+// Pause counter updates entirely if user prefers reduced motion
+if (!prefersReduced.matches) {
+  setInterval(update, 5000);
+} else {
+  // Still run once so numbers show, but never animate again
+}
+window.addEventListener('resize', () => {
+  stadiumState.forEach(s => { s.offscreenEmpty = null; s.offscreenFull = null; s.lastDotsToFill = -1; });
+  cachedSize = null;
+  if (!prefersReduced.matches) {
+    scheduleStadiumRedraws(lastHeroCount < 0 ? getCountForRate(TOTAL) : lastHeroCount);
+  }
+});
+// ─── EMBED COPY BUTTON ───────────────────────────────────────────────────────
+document.getElementById('embed-copy-btn').addEventListener('click', () => {
+  const code = document.getElementById('embed-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('embed-copy-btn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  });
+});
+</script>
+</body>
+</html>
